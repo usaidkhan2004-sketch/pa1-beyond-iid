@@ -1,0 +1,10 @@
+﻿data/
+.venv/
+__pycache__/
+*.pyc
+wandb/
+checkpoints/
+*.pt
+*.pth
+*.tar.gz
+ATML-PA1.pdf

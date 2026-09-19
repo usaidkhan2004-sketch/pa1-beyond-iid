@@ -1,0 +1,22 @@
+{
+  "resnet50_probe": {
+    "top1_accuracy": 96.4,
+    "macro_f1": 96.41,
+    "mean_max_confidence": 95.85
+  },
+  "vit_b16_probe": {
+    "top1_accuracy": 97.8,
+    "macro_f1": 97.8,
+    "mean_max_confidence": 97.6
+  },
+  "clip_vit_b32_probe": {
+    "top1_accuracy": 97.4,
+    "macro_f1": 97.39,
+    "mean_max_confidence": 81.64
+  },
+  "clip_vit_b32_zero_shot": {
+    "top1_accuracy": 94.0,
+    "macro_f1": 93.96,
+    "mean_max_confidence": 92.32
+  }
+}

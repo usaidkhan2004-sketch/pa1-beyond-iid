@@ -1,0 +1,34 @@
+{
+  "resnet50_probe": {
+    "n_shape": 130,
+    "n_texture": 31,
+    "n_other": 39,
+    "total_evaluated": 200,
+    "shape_bias_pct": 80.75,
+    "coverage_pct": 80.5
+  },
+  "vit_b16_probe": {
+    "n_shape": 156,
+    "n_texture": 16,
+    "n_other": 28,
+    "total_evaluated": 200,
+    "shape_bias_pct": 90.7,
+    "coverage_pct": 86.0
+  },
+  "clip_vit_b32_probe": {
+    "n_shape": 134,
+    "n_texture": 21,
+    "n_other": 45,
+    "total_evaluated": 200,
+    "shape_bias_pct": 86.45,
+    "coverage_pct": 77.5
+  },
+  "clip_vit_b32_zero_shot": {
+    "n_shape": 133,
+    "n_texture": 30,
+    "n_other": 37,
+    "total_evaluated": 200,
+    "shape_bias_pct": 81.6,
+    "coverage_pct": 81.5
+  }
+}

@@ -30,11 +30,12 @@ DATA_DIR = REPO_ROOT / "data"
 SUBSET_PATH = REPO_ROOT / "task1" / "data" / "test_subset_seed6304.json"
 CHECKPOINT_DIR = REPO_ROOT / "task1" / "results" / "checkpoints"
 RESULTS_DIR = REPO_ROOT / "task1" / "results"
+CUE_CONFLICT_DIR = RESULTS_DIR / "cue_conflicts"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =====================================================================
-# Dataset Wrapper for Interventions
+# Dataset Wrappers
 # =====================================================================
 class TransformedSubset(Dataset):
     """Wraps selected indices of STL-10, applying an image-level intervention
@@ -58,7 +59,6 @@ class TransformedSubset(Dataset):
     def __getitem__(self, idx):
         real_idx = self.indices[idx]
         img, target = self.base_dataset.data[real_idx], int(self.base_dataset.labels[real_idx])
-        # STL-10 numpy array shape is (3, 96, 96); transpose to (96, 96, 3) for PIL
         img = Image.fromarray(np.transpose(img, (1, 2, 0)))
 
         if self.intervention_fn is not None:
@@ -68,6 +68,32 @@ class TransformedSubset(Dataset):
             img = self.backbone_transform(img)
 
         return img, target
+
+
+class CueConflictDataset(Dataset):
+    """Loads accepted cue-conflict images and pairs them with both content (shape)
+    and style (texture) class target indices.
+    """
+    def __init__(self, metadata_path: Path, img_dir: Path, backbone_transform: Callable = None):
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            self.metadata = json.load(f)["samples"]
+        self.img_dir = img_dir
+        self.backbone_transform = backbone_transform
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, idx):
+        item = self.metadata[idx]
+        img_path = self.img_dir / item["filename"]
+        img = Image.open(img_path).convert("RGB")
+
+        if self.backbone_transform is not None:
+            img = self.backbone_transform(img)
+
+        shape_label = item["content_label"]
+        texture_label = item["style_label"]
+        return img, shape_label, texture_label
 
 
 # =====================================================================
@@ -87,11 +113,32 @@ def compute_classification_metrics(
 
 
 def compute_deltas(perturbed: dict, baseline: dict) -> dict:
-    """Calculates performance change: Baseline - Perturbed (positive value means a drop)."""
     return {
         "acc_drop": round(baseline["top1_accuracy"] - perturbed["top1_accuracy"], 2),
         "f1_drop": round(baseline["macro_f1"] - perturbed["macro_f1"], 2),
         "conf_drop": round(baseline["mean_max_confidence"] - perturbed["mean_max_confidence"], 2),
+    }
+
+
+def compute_shape_bias_metrics(
+    preds: np.ndarray, shape_targets: np.ndarray, texture_targets: np.ndarray
+) -> Dict[str, float]:
+    """Calculates Shape Bias (%) and Coverage (%) per assignment specifications."""
+    n_shape = int((preds == shape_targets).sum())
+    n_texture = int((preds == texture_targets).sum())
+    n_total = len(preds)
+
+    decisive_total = n_shape + n_texture
+    shape_bias = (n_shape / decisive_total * 100.0) if decisive_total > 0 else 0.0
+    coverage = (decisive_total / n_total * 100.0) if n_total > 0 else 0.0
+
+    return {
+        "n_shape": n_shape,
+        "n_texture": n_texture,
+        "n_other": n_total - decisive_total,
+        "total_evaluated": n_total,
+        "shape_bias_pct": round(float(shape_bias), 2),
+        "coverage_pct": round(float(coverage), 2),
     }
 
 
@@ -206,7 +253,7 @@ def evaluate_clean_baseline(indices: list, device: torch.device) -> dict:
 
 
 # =====================================================================
-# Part 2: Color Bias Evaluation
+# Part 2: Color Bias
 # =====================================================================
 def evaluate_color_bias(indices: list, device: torch.device) -> dict:
     baseline_path = RESULTS_DIR / "clean_baseline_metrics.json"
@@ -229,7 +276,6 @@ def evaluate_color_bias(indices: list, device: torch.device) -> dict:
         print(f"\n=== Evaluating Color Intervention: {interv_name.upper()} ===")
         results[interv_name] = {}
 
-        # 1. Probed backbones
         for model_name in models_to_eval:
             key = f"{model_name}_probe"
             print(f"Evaluating {key}...")
@@ -246,7 +292,6 @@ def evaluate_color_bias(indices: list, device: torch.device) -> dict:
             print(f"  Metrics: {metrics}")
             print(f"  Drops vs Clean: {deltas}")
 
-        # 2. Zero-Shot CLIP
         key = "clip_vit_b32_zero_shot"
         print(f"Evaluating {key}...")
         clip_wrapper, transform, _ = load_clip_vit_b32()
@@ -266,7 +311,85 @@ def evaluate_color_bias(indices: list, device: torch.device) -> dict:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\nColor bias results successfully saved to: {out_path}")
+    print(f"\nColor bias results saved to: {out_path}")
+    return results
+
+
+# =====================================================================
+# Part 3: Shape vs. Texture (Cue Conflicts)
+# =====================================================================
+def evaluate_cue_conflicts(device: torch.device) -> dict:
+    meta_path = CUE_CONFLICT_DIR / "cue_conflict_metadata.json"
+    accepted_dir = CUE_CONFLICT_DIR / "accepted"
+
+    if not meta_path.exists() or not accepted_dir.exists():
+        raise FileNotFoundError(
+            f"Cue conflict dataset not found at {CUE_CONFLICT_DIR}. "
+            f"Run 'task1/data/make_cue_conflicts.py' first."
+        )
+
+    print("\n--- Evaluating Shape vs. Texture Cue Conflicts ---")
+    raw_dataset = STL10(root=str(DATA_DIR), split="test", download=False)
+    classes = raw_dataset.classes
+
+    results = {}
+    models_to_eval = ["resnet50", "vit_b16", "clip_vit_b32"]
+
+    for model_name in models_to_eval:
+        key = f"{model_name}_probe"
+        print(f"Evaluating {key}...")
+        backbone, head, transform = load_probing_system(model_name, device)
+        ds = CueConflictDataset(meta_path, accepted_dir, backbone_transform=transform)
+        loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
+
+        all_preds, shape_targets, texture_targets = [], [], []
+        with torch.no_grad():
+            for images, s_lbls, t_lbls in loader:
+                images = images.to(device)
+                logits = head(backbone(images))
+                preds = logits.argmax(dim=-1).cpu().numpy()
+
+                all_preds.extend(preds)
+                shape_targets.extend(s_lbls.numpy())
+                texture_targets.extend(t_lbls.numpy())
+
+        bias_metrics = compute_shape_bias_metrics(
+            np.array(all_preds), np.array(shape_targets), np.array(texture_targets)
+        )
+        results[key] = bias_metrics
+        print(f"  {key}: Shape Bias = {bias_metrics['shape_bias_pct']}%, Coverage = {bias_metrics['coverage_pct']}%")
+
+    key = "clip_vit_b32_zero_shot"
+    print(f"Evaluating {key}...")
+    clip_wrapper, transform, _ = load_clip_vit_b32()
+    text_weights = clip_wrapper.get_zero_shot_weights(classes)
+
+    ds = CueConflictDataset(meta_path, accepted_dir, backbone_transform=transform)
+    loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
+
+    all_preds, shape_targets, texture_targets = [], [], []
+    with torch.no_grad():
+        for images, s_lbls, t_lbls in loader:
+            images = images.to(device)
+            feats = clip_wrapper(images)
+            logits = feats @ text_weights
+            preds = logits.argmax(dim=-1).cpu().numpy()
+
+            all_preds.extend(preds)
+            shape_targets.extend(s_lbls.numpy())
+            texture_targets.extend(t_lbls.numpy())
+
+    bias_metrics = compute_shape_bias_metrics(
+        np.array(all_preds), np.array(shape_targets), np.array(texture_targets)
+    )
+    results[key] = bias_metrics
+    print(f"  {key}: Shape Bias = {bias_metrics['shape_bias_pct']}%, Coverage = {bias_metrics['coverage_pct']}%")
+
+    out_path = RESULTS_DIR / "cue_conflict_metrics.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"\nCue-conflict bias metrics saved to: {out_path}\n")
     return results
 
 
@@ -278,8 +401,8 @@ def main():
     parser.add_argument(
         "--mode",
         type=str,
-        default="color",
-        choices=["clean", "color", "translation", "shuffle", "all"],
+        default="cue_conflict",
+        choices=["clean", "color", "cue_conflict", "translation", "shuffle", "all"],
         help="Experiment to run",
     )
     args = parser.parse_args()
@@ -292,6 +415,8 @@ def main():
         evaluate_clean_baseline(indices, device)
     elif args.mode == "color":
         evaluate_color_bias(indices, device)
+    elif args.mode == "cue_conflict":
+        evaluate_cue_conflicts(device)
 
 
 if __name__ == "__main__":

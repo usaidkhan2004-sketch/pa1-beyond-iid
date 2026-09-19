@@ -1,20 +1,22 @@
 import sys
 from pathlib import Path
+
+# Resolve repository root (PA1)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 import argparse
 import json
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Callable
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import STL10
 from sklearn.metrics import f1_score
-
-# Resolve repository root
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from PIL import Image
 
 from task1.models.backbones import (
     get_device,
@@ -22,6 +24,7 @@ from task1.models.backbones import (
     load_vit_b16,
     load_clip_vit_b32,
 )
+from task1.data.transforms import apply_grayscale, apply_hue_rotation
 
 DATA_DIR = REPO_ROOT / "data"
 SUBSET_PATH = REPO_ROOT / "task1" / "data" / "test_subset_seed6304.json"
@@ -31,12 +34,48 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =====================================================================
+# Dataset Wrapper for Interventions
+# =====================================================================
+class TransformedSubset(Dataset):
+    """Wraps selected indices of STL-10, applying an image-level intervention
+    (on PIL image) before passing to the backbone transform.
+    """
+    def __init__(
+        self,
+        base_dataset: STL10,
+        indices: List[int],
+        intervention_fn: Callable[[Image.Image], Image.Image] = None,
+        backbone_transform: Callable = None,
+    ):
+        self.base_dataset = base_dataset
+        self.indices = indices
+        self.intervention_fn = intervention_fn
+        self.backbone_transform = backbone_transform
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        real_idx = self.indices[idx]
+        img, target = self.base_dataset.data[real_idx], int(self.base_dataset.labels[real_idx])
+        # STL-10 numpy array shape is (3, 96, 96); transpose to (96, 96, 3) for PIL
+        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
+
+        if self.intervention_fn is not None:
+            img = self.intervention_fn(img)
+
+        if self.backbone_transform is not None:
+            img = self.backbone_transform(img)
+
+        return img, target
+
+
+# =====================================================================
 # Metric Computation
 # =====================================================================
 def compute_classification_metrics(
     preds: np.ndarray, targets: np.ndarray, confs: np.ndarray
 ) -> Dict[str, float]:
-    """Computes Top-1 Accuracy, Macro-F1, and Mean Maximum Confidence."""
     acc = (preds == targets).mean() * 100.0
     macro_f1 = f1_score(targets, preds, average="macro") * 100.0
     mean_conf = confs.mean() * 100.0
@@ -47,13 +86,21 @@ def compute_classification_metrics(
     }
 
 
+def compute_deltas(perturbed: dict, baseline: dict) -> dict:
+    """Calculates performance change: Baseline - Perturbed (positive value means a drop)."""
+    return {
+        "acc_drop": round(baseline["top1_accuracy"] - perturbed["top1_accuracy"], 2),
+        "f1_drop": round(baseline["macro_f1"] - perturbed["macro_f1"], 2),
+        "conf_drop": round(baseline["mean_max_confidence"] - perturbed["mean_max_confidence"], 2),
+    }
+
+
 # =====================================================================
 # Model Loading Helpers
 # =====================================================================
 def load_probing_system(
     model_name: str, device: torch.device
 ) -> Tuple[nn.Module, nn.Linear, object]:
-    """Loads a frozen backbone along with its trained linear head."""
     factories = {
         "resnet50": (load_resnet50, 2048),
         "vit_b16": (load_vit_b16, 768),
@@ -77,7 +124,6 @@ def load_probing_system(
 def run_linear_probe_inference(
     backbone: nn.Module, head: nn.Linear, loader: DataLoader, device: torch.device
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Runs forward pass over loader returning predictions, targets, and max probabilities."""
     all_preds, all_targets, all_confs = [], [], []
 
     with torch.no_grad():
@@ -101,7 +147,6 @@ def run_clip_zeroshot_inference(
     loader: DataLoader,
     device: torch.device,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Runs zero-shot inference using prompt 'a photo of a {class}'."""
     text_weights = clip_wrapper.get_zero_shot_weights(class_names)
     logit_scale = clip_wrapper.model.logit_scale.exp().item()
 
@@ -112,7 +157,6 @@ def run_clip_zeroshot_inference(
             images = images.to(device)
             img_feats = clip_wrapper(images)
 
-            # Scaled cosine similarity
             logits = logit_scale * (img_feats @ text_weights)
             probs = F.softmax(logits, dim=-1)
 
@@ -125,57 +169,118 @@ def run_clip_zeroshot_inference(
 
 
 # =====================================================================
-# Part 1: Clean Baseline Evaluation
+# Part 1: Clean Baseline
 # =====================================================================
 def evaluate_clean_baseline(indices: list, device: torch.device) -> dict:
-    """Evaluates the 3 linear probe models and zero-shot CLIP on clean 500 images."""
     print("--- Running Clean Baseline Evaluation ---")
+    raw_dataset = STL10(root=str(DATA_DIR), split="test", download=False)
     results = {}
 
-    # 1. Probing models
     for model_name in ["resnet50", "vit_b16", "clip_vit_b32"]:
         print(f"Evaluating {model_name} (Linear Probe)...")
         backbone, head, transform = load_probing_system(model_name, device)
-
-        dataset = STL10(root=str(DATA_DIR), split="test", transform=transform, download=False)
-        loader = DataLoader(Subset(dataset, indices), batch_size=64, shuffle=False, num_workers=0)
+        ds = TransformedSubset(raw_dataset, indices, intervention_fn=None, backbone_transform=transform)
+        loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
 
         preds, targets, confs = run_linear_probe_inference(backbone, head, loader, device)
         metrics = compute_classification_metrics(preds, targets, confs)
         results[f"{model_name}_probe"] = metrics
         print(f"  {model_name}: {metrics}")
 
-    # 2. OpenCLIP Zero-Shot
     print("Evaluating OpenCLIP ViT-B-32 (Zero-Shot)...")
     clip_wrapper, transform, _ = load_clip_vit_b32()
-    dataset = STL10(root=str(DATA_DIR), split="test", transform=transform, download=False)
-    loader = DataLoader(Subset(dataset, indices), batch_size=64, shuffle=False, num_workers=0)
+    ds = TransformedSubset(raw_dataset, indices, intervention_fn=None, backbone_transform=transform)
+    loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
 
-    preds, targets, confs = run_clip_zeroshot_inference(clip_wrapper, dataset.classes, loader, device)
+    preds, targets, confs = run_clip_zeroshot_inference(clip_wrapper, raw_dataset.classes, loader, device)
     zero_shot_metrics = compute_classification_metrics(preds, targets, confs)
     results["clip_vit_b32_zero_shot"] = zero_shot_metrics
     print(f"  clip_vit_b32_zero_shot: {zero_shot_metrics}")
 
-    # Save to disk
     out_path = RESULTS_DIR / "clean_baseline_metrics.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\nSaved clean baseline metrics to {out_path}")
+    print(f"Clean baseline metrics saved to: {out_path}\n")
     return results
 
 
 # =====================================================================
-# Entry Point & CLI
+# Part 2: Color Bias Evaluation
+# =====================================================================
+def evaluate_color_bias(indices: list, device: torch.device) -> dict:
+    baseline_path = RESULTS_DIR / "clean_baseline_metrics.json"
+    if not baseline_path.exists():
+        raise FileNotFoundError("Baseline metrics missing. Run with '--mode clean' first.")
+
+    with open(baseline_path, "r", encoding="utf-8") as f:
+        baseline_results = json.load(f)
+
+    raw_dataset = STL10(root=str(DATA_DIR), split="test", download=False)
+    interventions = {
+        "grayscale": apply_grayscale,
+        "hue_rotation": lambda img: apply_hue_rotation(img, hue_factor=0.5),
+    }
+
+    results = {}
+    models_to_eval = ["resnet50", "vit_b16", "clip_vit_b32"]
+
+    for interv_name, interv_fn in interventions.items():
+        print(f"\n=== Evaluating Color Intervention: {interv_name.upper()} ===")
+        results[interv_name] = {}
+
+        # 1. Probed backbones
+        for model_name in models_to_eval:
+            key = f"{model_name}_probe"
+            print(f"Evaluating {key}...")
+            backbone, head, transform = load_probing_system(model_name, device)
+
+            ds = TransformedSubset(raw_dataset, indices, intervention_fn=interv_fn, backbone_transform=transform)
+            loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
+
+            preds, targets, confs = run_linear_probe_inference(backbone, head, loader, device)
+            metrics = compute_classification_metrics(preds, targets, confs)
+            deltas = compute_deltas(metrics, baseline_results[key])
+
+            results[interv_name][key] = {"metrics": metrics, "relative_drop": deltas}
+            print(f"  Metrics: {metrics}")
+            print(f"  Drops vs Clean: {deltas}")
+
+        # 2. Zero-Shot CLIP
+        key = "clip_vit_b32_zero_shot"
+        print(f"Evaluating {key}...")
+        clip_wrapper, transform, _ = load_clip_vit_b32()
+
+        ds = TransformedSubset(raw_dataset, indices, intervention_fn=interv_fn, backbone_transform=transform)
+        loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
+
+        preds, targets, confs = run_clip_zeroshot_inference(clip_wrapper, raw_dataset.classes, loader, device)
+        metrics = compute_classification_metrics(preds, targets, confs)
+        deltas = compute_deltas(metrics, baseline_results[key])
+
+        results[interv_name][key] = {"metrics": metrics, "relative_drop": deltas}
+        print(f"  Metrics: {metrics}")
+        print(f"  Drops vs Clean: {deltas}")
+
+    out_path = RESULTS_DIR / "color_bias_metrics.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"\nColor bias results successfully saved to: {out_path}")
+    return results
+
+
+# =====================================================================
+# CLI Entry Point
 # =====================================================================
 def main():
     parser = argparse.ArgumentParser(description="Task 1 Bias Evaluation Suite")
     parser.add_argument(
         "--mode",
         type=str,
-        default="clean",
+        default="color",
         choices=["clean", "color", "translation", "shuffle", "all"],
-        help="Evaluation experiment to run",
+        help="Experiment to run",
     )
     args = parser.parse_args()
 
@@ -185,8 +290,8 @@ def main():
 
     if args.mode == "clean":
         evaluate_clean_baseline(indices, device)
-    else:
-        print(f"Intervention '{args.mode}' evaluation routines will be added as we progress through Task 1!")
+    elif args.mode == "color":
+        evaluate_color_bias(indices, device)
 
 
 if __name__ == "__main__":

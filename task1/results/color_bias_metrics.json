@@ -1,0 +1,102 @@
+{
+  "grayscale": {
+    "resnet50_probe": {
+      "metrics": {
+        "top1_accuracy": 94.4,
+        "macro_f1": 94.4,
+        "mean_max_confidence": 94.67
+      },
+      "relative_drop": {
+        "acc_drop": 2.0,
+        "f1_drop": 2.01,
+        "conf_drop": 1.18
+      }
+    },
+    "vit_b16_probe": {
+      "metrics": {
+        "top1_accuracy": 94.8,
+        "macro_f1": 94.82,
+        "mean_max_confidence": 96.01
+      },
+      "relative_drop": {
+        "acc_drop": 3.0,
+        "f1_drop": 2.98,
+        "conf_drop": 1.59
+      }
+    },
+    "clip_vit_b32_probe": {
+      "metrics": {
+        "top1_accuracy": 93.4,
+        "macro_f1": 93.36,
+        "mean_max_confidence": 76.51
+      },
+      "relative_drop": {
+        "acc_drop": 4.0,
+        "f1_drop": 4.03,
+        "conf_drop": 5.13
+      }
+    },
+    "clip_vit_b32_zero_shot": {
+      "metrics": {
+        "top1_accuracy": 91.0,
+        "macro_f1": 90.86,
+        "mean_max_confidence": 91.35
+      },
+      "relative_drop": {
+        "acc_drop": 3.0,
+        "f1_drop": 3.1,
+        "conf_drop": 0.97
+      }
+    }
+  },
+  "hue_rotation": {
+    "resnet50_probe": {
+      "metrics": {
+        "top1_accuracy": 94.2,
+        "macro_f1": 94.19,
+        "mean_max_confidence": 94.92
+      },
+      "relative_drop": {
+        "acc_drop": 2.2,
+        "f1_drop": 2.22,
+        "conf_drop": 0.93
+      }
+    },
+    "vit_b16_probe": {
+      "metrics": {
+        "top1_accuracy": 93.4,
+        "macro_f1": 93.4,
+        "mean_max_confidence": 94.66
+      },
+      "relative_drop": {
+        "acc_drop": 4.4,
+        "f1_drop": 4.4,
+        "conf_drop": 2.94
+      }
+    },
+    "clip_vit_b32_probe": {
+      "metrics": {
+        "top1_accuracy": 93.0,
+        "macro_f1": 92.94,
+        "mean_max_confidence": 73.83
+      },
+      "relative_drop": {
+        "acc_drop": 4.4,
+        "f1_drop": 4.45,
+        "conf_drop": 7.81
+      }
+    },
+    "clip_vit_b32_zero_shot": {
+      "metrics": {
+        "top1_accuracy": 92.6,
+        "macro_f1": 92.49,
+        "mean_max_confidence": 90.31
+      },
+      "relative_drop": {
+        "acc_drop": 1.4,
+        "f1_drop": 1.47,
+        "conf_drop": 2.01
+      }
+    }
+  }
+}

@@ -24,7 +24,11 @@ from task1.models.backbones import (
     load_vit_b16,
     load_clip_vit_b32,
 )
-from task1.data.transforms import apply_grayscale, apply_hue_rotation
+from task1.data.transforms import (
+    apply_grayscale,
+    apply_hue_rotation,
+    apply_translation,
+)
 
 DATA_DIR = REPO_ROOT / "data"
 SUBSET_PATH = REPO_ROOT / "task1" / "data" / "test_subset_seed6304.json"
@@ -394,6 +398,112 @@ def evaluate_cue_conflicts(device: torch.device) -> dict:
 
 
 # =====================================================================
+# Part 4: Spatial Translation Invariance
+# =====================================================================
+def evaluate_translation(indices: list, device: torch.device) -> dict:
+    print("\n--- Evaluating Spatial Translation Invariance ---")
+    raw_dataset = STL10(root=str(DATA_DIR), split="test", download=False)
+    classes = raw_dataset.classes
+
+    deltas = [0, 8, 16, 32]
+    directions = ["north", "south", "east", "west"]
+
+    results = {
+        "displacements": deltas,
+        "models": {},
+    }
+
+    def run_eval(model_type: str, model_obj, head_obj, transform_fn, interv_fn):
+        ds = TransformedSubset(raw_dataset, indices, intervention_fn=interv_fn, backbone_transform=transform_fn)
+        loader = DataLoader(ds, batch_size=64, shuffle=False, num_workers=0)
+        if model_type == "probe":
+            preds, targets, _ = run_linear_probe_inference(model_obj, head_obj, loader, device)
+        else:
+            preds, targets, _ = run_clip_zeroshot_inference(model_obj, classes, loader, device)
+        return preds, targets
+
+    all_configs = [
+        ("resnet50_probe", "probe", "resnet50"),
+        ("vit_b16_probe", "probe", "vit_b16"),
+        ("clip_vit_b32_probe", "probe", "clip_vit_b32"),
+        ("clip_vit_b32_zero_shot", "zero_shot", "clip_vit_b32"),
+    ]
+
+    for model_key, mode_type, model_name in all_configs:
+        print(f"\nEvaluating {model_key} across translations...")
+        if mode_type == "probe":
+            backbone, head, transform = load_probing_system(model_name, device)
+            clip_wrapper = None
+        else:
+            clip_wrapper, transform, _ = load_clip_vit_b32()
+            backbone, head = None, None
+
+        # Clean baseline predictions at delta=0 (defines reference y_hat)
+        clean_preds, targets = run_eval(
+            mode_type,
+            backbone if mode_type == "probe" else clip_wrapper,
+            head,
+            transform,
+            interv_fn=None,
+        )
+        clean_acc = round(float((clean_preds == targets).mean() * 100.0), 2)
+
+        model_results = {
+            "deltas": {
+                "0": {
+                    "accuracy": clean_acc,
+                    "consistency": 100.0,
+                }
+            }
+        }
+        print(f"  delta=0: Accuracy = {clean_acc}%, Consistency = 100.0%")
+
+        # Perturbations at delta = 8, 16, 32
+        for delta in [8, 16, 32]:
+            dir_accuracies = []
+            dir_consistencies = []
+
+            for direction in directions:
+                # Uses shift_px matching task1/data/transforms.py
+                interv_fn = lambda img, d=delta, dr=direction: apply_translation(img, shift_px=d, direction=dr)
+                preds, _ = run_eval(
+                    mode_type,
+                    backbone if mode_type == "probe" else clip_wrapper,
+                    head,
+                    transform,
+                    interv_fn=interv_fn,
+                )
+
+                acc = (preds == targets).mean() * 100.0
+                consistency = (preds == clean_preds).mean() * 100.0
+
+                dir_accuracies.append(acc)
+                dir_consistencies.append(consistency)
+
+            mean_acc = round(float(np.mean(dir_accuracies)), 2)
+            mean_cons = round(float(np.mean(dir_consistencies)), 2)
+
+            model_results["deltas"][str(delta)] = {
+                "accuracy": mean_acc,
+                "consistency": mean_cons,
+                "per_direction": {
+                    d: {"accuracy": round(float(a), 2), "consistency": round(float(c), 2)}
+                    for d, a, c in zip(directions, dir_accuracies, dir_consistencies)
+                },
+            }
+            print(f"  delta={delta}: Mean Accuracy = {mean_acc}%, Mean Consistency = {mean_cons}%")
+
+        results["models"][model_key] = model_results
+
+    out_path = RESULTS_DIR / "translation_metrics.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"\nTranslation metrics saved to: {out_path}\n")
+    return results
+
+
+# =====================================================================
 # CLI Entry Point
 # =====================================================================
 def main():
@@ -417,6 +527,8 @@ def main():
         evaluate_color_bias(indices, device)
     elif args.mode == "cue_conflict":
         evaluate_cue_conflicts(device)
+    elif args.mode == "translation":
+        evaluate_translation(indices, device)
 
 
 if __name__ == "__main__":

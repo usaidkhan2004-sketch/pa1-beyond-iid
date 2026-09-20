@@ -1,0 +1,306 @@
+{
+  "displacements": [
+    0,
+    8,
+    16,
+    32
+  ],
+  "models": {
+    "resnet50_probe": {
+      "deltas": {
+        "0": {
+          "accuracy": 96.4,
+          "consistency": 100.0
+        },
+        "8": {
+          "accuracy": 96.3,
+          "consistency": 98.45,
+          "per_direction": {
+            "north": {
+              "accuracy": 97.0,
+              "consistency": 98.6
+            },
+            "south": {
+              "accuracy": 96.2,
+              "consistency": 97.8
+            },
+            "east": {
+              "accuracy": 95.8,
+              "consistency": 98.4
+            },
+            "west": {
+              "accuracy": 96.2,
+              "consistency": 99.0
+            }
+          }
+        },
+        "16": {
+          "accuracy": 95.5,
+          "consistency": 97.5,
+          "per_direction": {
+            "north": {
+              "accuracy": 95.4,
+              "consistency": 97.4
+            },
+            "south": {
+              "accuracy": 95.6,
+              "consistency": 97.2
+            },
+            "east": {
+              "accuracy": 95.6,
+              "consistency": 97.6
+            },
+            "west": {
+              "accuracy": 95.4,
+              "consistency": 97.8
+            }
+          }
+        },
+        "32": {
+          "accuracy": 92.05,
+          "consistency": 93.6,
+          "per_direction": {
+            "north": {
+              "accuracy": 91.8,
+              "consistency": 93.6
+            },
+            "south": {
+              "accuracy": 91.8,
+              "consistency": 92.8
+            },
+            "east": {
+              "accuracy": 92.0,
+              "consistency": 93.6
+            },
+            "west": {
+              "accuracy": 92.6,
+              "consistency": 94.4
+            }
+          }
+        }
+      }
+    },
+    "vit_b16_probe": {
+      "deltas": {
+        "0": {
+          "accuracy": 97.8,
+          "consistency": 100.0
+        },
+        "8": {
+          "accuracy": 97.3,
+          "consistency": 98.7,
+          "per_direction": {
+            "north": {
+              "accuracy": 97.8,
+              "consistency": 99.0
+            },
+            "south": {
+              "accuracy": 97.6,
+              "consistency": 98.6
+            },
+            "east": {
+              "accuracy": 96.6,
+              "consistency": 98.6
+            },
+            "west": {
+              "accuracy": 97.2,
+              "consistency": 98.6
+            }
+          }
+        },
+        "16": {
+          "accuracy": 96.8,
+          "consistency": 98.35,
+          "per_direction": {
+            "north": {
+              "accuracy": 97.0,
+              "consistency": 97.8
+            },
+            "south": {
+              "accuracy": 97.0,
+              "consistency": 98.6
+            },
+            "east": {
+              "accuracy": 96.8,
+              "consistency": 98.8
+            },
+            "west": {
+              "accuracy": 96.4,
+              "consistency": 98.2
+            }
+          }
+        },
+        "32": {
+          "accuracy": 93.4,
+          "consistency": 94.55,
+          "per_direction": {
+            "north": {
+              "accuracy": 91.4,
+              "consistency": 92.0
+            },
+            "south": {
+              "accuracy": 94.6,
+              "consistency": 95.8
+            },
+            "east": {
+              "accuracy": 94.2,
+              "consistency": 95.6
+            },
+            "west": {
+              "accuracy": 93.4,
+              "consistency": 94.8
+            }
+          }
+        }
+      }
+    },
+    "clip_vit_b32_probe": {
+      "deltas": {
+        "0": {
+          "accuracy": 97.4,
+          "consistency": 100.0
+        },
+        "8": {
+          "accuracy": 96.85,
+          "consistency": 97.0,
+          "per_direction": {
+            "north": {
+              "accuracy": 96.4,
+              "consistency": 96.6
+            },
+            "south": {
+              "accuracy": 96.8,
+              "consistency": 96.6
+            },
+            "east": {
+              "accuracy": 97.0,
+              "consistency": 97.6
+            },
+            "west": {
+              "accuracy": 97.2,
+              "consistency": 97.2
+            }
+          }
+        },
+        "16": {
+          "accuracy": 95.65,
+          "consistency": 96.1,
+          "per_direction": {
+            "north": {
+              "accuracy": 94.8,
+              "consistency": 96.4
+            },
+            "south": {
+              "accuracy": 96.2,
+              "consistency": 96.4
+            },
+            "east": {
+              "accuracy": 95.8,
+              "consistency": 95.6
+            },
+            "west": {
+              "accuracy": 95.8,
+              "consistency": 96.0
+            }
+          }
+        },
+        "32": {
+          "accuracy": 92.1,
+          "consistency": 91.95,
+          "per_direction": {
+            "north": {
+              "accuracy": 90.4,
+              "consistency": 89.4
+            },
+            "south": {
+              "accuracy": 93.0,
+              "consistency": 93.2
+            },
+            "east": {
+              "accuracy": 92.6,
+              "consistency": 92.8
+            },
+            "west": {
+              "accuracy": 92.4,
+              "consistency": 92.4
+            }
+          }
+        }
+      }
+    },
+    "clip_vit_b32_zero_shot": {
+      "deltas": {
+        "0": {
+          "accuracy": 94.0,
+          "consistency": 100.0
+        },
+        "8": {
+          "accuracy": 94.5,
+          "consistency": 96.0,
+          "per_direction": {
+            "north": {
+              "accuracy": 94.6,
+              "consistency": 95.0
+            },
+            "south": {
+              "accuracy": 94.8,
+              "consistency": 96.8
+            },
+            "east": {
+              "accuracy": 94.6,
+              "consistency": 96.0
+            },
+            "west": {
+              "accuracy": 94.0,
+              "consistency": 96.2
+            }
+          }
+        },
+        "16": {
+          "accuracy": 93.15,
+          "consistency": 95.25,
+          "per_direction": {
+            "north": {
+              "accuracy": 93.4,
+              "consistency": 95.0
+            },
+            "south": {
+              "accuracy": 92.8,
+              "consistency": 95.8
+            },
+            "east": {
+              "accuracy": 93.2,
+              "consistency": 95.8
+            },
+            "west": {
+              "accuracy": 93.2,
+              "consistency": 94.4
+            }
+          }
+        },
+        "32": {
+          "accuracy": 88.45,
+          "consistency": 89.85,
+          "per_direction": {
+            "north": {
+              "accuracy": 86.4,
+              "consistency": 87.6
+            },
+            "south": {
+              "accuracy": 89.2,
+              "consistency": 91.2
+            },
+            "east": {
+              "accuracy": 89.4,
+              "consistency": 90.6
+            },
+            "west": {
+              "accuracy": 88.8,
+              "consistency": 90.0
+            }
+          }
+        }
+      }
+    }
+  }
+}

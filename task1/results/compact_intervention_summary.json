@@ -1,0 +1,42 @@
+{
+  "resnet50_probe": {
+    "clean_acc": 96.4,
+    "grayscale_acc": 94.4,
+    "grayscale_drop": 2.0,
+    "hue_acc": 94.2,
+    "hue_drop": 2.2,
+    "shuffle_acc": 75.8,
+    "shuffle_drop": 20.6,
+    "shuffle_consistency": 76.8
+  },
+  "vit_b16_probe": {
+    "clean_acc": 97.8,
+    "grayscale_acc": 94.8,
+    "grayscale_drop": 3.0,
+    "hue_acc": 93.4,
+    "hue_drop": 4.4,
+    "shuffle_acc": 88.0,
+    "shuffle_drop": 9.8,
+    "shuffle_consistency": 88.2
+  },
+  "clip_vit_b32_probe": {
+    "clean_acc": 97.4,
+    "grayscale_acc": 93.4,
+    "grayscale_drop": 4.0,
+    "hue_acc": 93.0,
+    "hue_drop": 4.4,
+    "shuffle_acc": 81.2,
+    "shuffle_drop": 16.2,
+    "shuffle_consistency": 81.0
+  },
+  "clip_vit_b32_zero_shot": {
+    "clean_acc": 94.0,
+    "grayscale_acc": 91.0,
+    "grayscale_drop": 3.0,
+    "hue_acc": 92.6,
+    "hue_drop": 1.4,
+    "shuffle_acc": 80.4,
+    "shuffle_drop": 13.6,
+    "shuffle_consistency": 81.6
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "resnet50_probe": {
+    "metrics": {
+      "top1_accuracy": 75.8,
+      "macro_f1": 75.93,
+      "mean_max_confidence": 84.11
+    },
+    "relative_drop": {
+      "acc_drop": 20.6,
+      "f1_drop": 20.48,
+      "conf_drop": 11.74
+    },
+    "consistency": 76.8
+  },
+  "vit_b16_probe": {
+    "metrics": {
+      "top1_accuracy": 88.0,
+      "macro_f1": 88.04,
+      "mean_max_confidence": 89.39
+    },
+    "relative_drop": {
+      "acc_drop": 9.8,
+      "f1_drop": 9.76,
+      "conf_drop": 8.21
+    },
+    "consistency": 88.2
+  },
+  "clip_vit_b32_probe": {
+    "metrics": {
+      "top1_accuracy": 81.2,
+      "macro_f1": 81.15,
+      "mean_max_confidence": 54.72
+    },
+    "relative_drop": {
+      "acc_drop": 16.2,
+      "f1_drop": 16.24,
+      "conf_drop": 26.92
+    },
+    "consistency": 81.0
+  },
+  "clip_vit_b32_zero_shot": {
+    "metrics": {
+      "top1_accuracy": 80.4,
+      "macro_f1": 79.94,
+      "mean_max_confidence": 78.89
+    },
+    "relative_drop": {
+      "acc_drop": 13.6,
+      "f1_drop": 14.02,
+      "conf_drop": 13.43
+    },
+    "consistency": 81.6
+  }
+}

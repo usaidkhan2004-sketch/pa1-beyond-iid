@@ -28,6 +28,7 @@ from task1.data.transforms import (
     apply_grayscale,
     apply_hue_rotation,
     apply_translation,
+    apply_patch_shuffle,
 )
 
 DATA_DIR = REPO_ROOT / "data"
@@ -127,7 +128,6 @@ def compute_deltas(perturbed: dict, baseline: dict) -> dict:
 def compute_shape_bias_metrics(
     preds: np.ndarray, shape_targets: np.ndarray, texture_targets: np.ndarray
 ) -> Dict[str, float]:
-    """Calculates Shape Bias (%) and Coverage (%) per assignment specifications."""
     n_shape = int((preds == shape_targets).sum())
     n_texture = int((preds == texture_targets).sum())
     n_total = len(preds)
@@ -438,7 +438,6 @@ def evaluate_translation(indices: list, device: torch.device) -> dict:
             clip_wrapper, transform, _ = load_clip_vit_b32()
             backbone, head = None, None
 
-        # Clean baseline predictions at delta=0 (defines reference y_hat)
         clean_preds, targets = run_eval(
             mode_type,
             backbone if mode_type == "probe" else clip_wrapper,
@@ -456,15 +455,12 @@ def evaluate_translation(indices: list, device: torch.device) -> dict:
                 }
             }
         }
-        print(f"  delta=0: Accuracy = {clean_acc}%, Consistency = 100.0%")
 
-        # Perturbations at delta = 8, 16, 32
         for delta in [8, 16, 32]:
             dir_accuracies = []
             dir_consistencies = []
 
             for direction in directions:
-                # Uses shift_px matching task1/data/transforms.py
                 interv_fn = lambda img, d=delta, dr=direction: apply_translation(img, shift_px=d, direction=dr)
                 preds, _ = run_eval(
                     mode_type,
@@ -491,7 +487,6 @@ def evaluate_translation(indices: list, device: torch.device) -> dict:
                     for d, a, c in zip(directions, dir_accuracies, dir_consistencies)
                 },
             }
-            print(f"  delta={delta}: Mean Accuracy = {mean_acc}%, Mean Consistency = {mean_cons}%")
 
         results["models"][model_key] = model_results
 
@@ -504,6 +499,86 @@ def evaluate_translation(indices: list, device: torch.device) -> dict:
 
 
 # =====================================================================
+# Part 5: Patch Structure (4x4 Shuffling)
+# =====================================================================
+def evaluate_patch_shuffle(indices: list, device: torch.device) -> dict:
+    baseline_path = RESULTS_DIR / "clean_baseline_metrics.json"
+    if not baseline_path.exists():
+        raise FileNotFoundError("Baseline metrics missing. Run with '--mode clean' first.")
+
+    with open(baseline_path, "r", encoding="utf-8") as f:
+        baseline_results = json.load(f)
+
+    print("\n--- Evaluating Patch Structure (4x4 Patch Shuffling, Seed 6304) ---")
+    raw_dataset = STL10(root=str(DATA_DIR), split="test", download=False)
+    classes = raw_dataset.classes
+
+    results = {}
+    models_to_eval = ["resnet50", "vit_b16", "clip_vit_b32"]
+
+    # Fixed seed 6304 produces the identical non-identity permutation across all models
+    shuffle_fn = lambda img: apply_patch_shuffle(img, grid_size=4, seed=6304)
+
+    for model_name in models_to_eval:
+        key = f"{model_name}_probe"
+        print(f"Evaluating {key} on shuffled patches...")
+        backbone, head, transform = load_probing_system(model_name, device)
+
+        # 1. Clean reference predictions for consistency calculation
+        clean_ds = TransformedSubset(raw_dataset, indices, intervention_fn=None, backbone_transform=transform)
+        clean_loader = DataLoader(clean_ds, batch_size=64, shuffle=False, num_workers=0)
+        clean_preds, targets, _ = run_linear_probe_inference(backbone, head, clean_loader, device)
+
+        # 2. Shuffled predictions
+        shuff_ds = TransformedSubset(raw_dataset, indices, intervention_fn=shuffle_fn, backbone_transform=transform)
+        shuff_loader = DataLoader(shuff_ds, batch_size=64, shuffle=False, num_workers=0)
+        shuff_preds, _, shuff_confs = run_linear_probe_inference(backbone, head, shuff_loader, device)
+
+        metrics = compute_classification_metrics(shuff_preds, targets, shuff_confs)
+        deltas = compute_deltas(metrics, baseline_results[key])
+        consistency = round(float((shuff_preds == clean_preds).mean() * 100.0), 2)
+
+        results[key] = {
+            "metrics": metrics,
+            "relative_drop": deltas,
+            "consistency": consistency,
+        }
+        print(f"  {key}: Acc = {metrics['top1_accuracy']}% (Drop: -{deltas['acc_drop']}%), Consistency = {consistency}%")
+
+    key = "clip_vit_b32_zero_shot"
+    print(f"Evaluating {key} on shuffled patches...")
+    clip_wrapper, transform, _ = load_clip_vit_b32()
+
+    # 1. Clean reference predictions
+    clean_ds = TransformedSubset(raw_dataset, indices, intervention_fn=None, backbone_transform=transform)
+    clean_loader = DataLoader(clean_ds, batch_size=64, shuffle=False, num_workers=0)
+    clean_preds, targets, _ = run_clip_zeroshot_inference(clip_wrapper, classes, clean_loader, device)
+
+    # 2. Shuffled predictions
+    shuff_ds = TransformedSubset(raw_dataset, indices, intervention_fn=shuffle_fn, backbone_transform=transform)
+    shuff_loader = DataLoader(shuff_ds, batch_size=64, shuffle=False, num_workers=0)
+    shuff_preds, _, shuff_confs = run_clip_zeroshot_inference(clip_wrapper, classes, shuff_loader, device)
+
+    metrics = compute_classification_metrics(shuff_preds, targets, shuff_confs)
+    deltas = compute_deltas(metrics, baseline_results[key])
+    consistency = round(float((shuff_preds == clean_preds).mean() * 100.0), 2)
+
+    results[key] = {
+        "metrics": metrics,
+        "relative_drop": deltas,
+        "consistency": consistency,
+    }
+    print(f"  {key}: Acc = {metrics['top1_accuracy']}% (Drop: -{deltas['acc_drop']}%), Consistency = {consistency}%")
+
+    out_path = RESULTS_DIR / "patch_shuffle_metrics.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"\nPatch shuffle metrics saved to: {out_path}\n")
+    return results
+
+
+# =====================================================================
 # CLI Entry Point
 # =====================================================================
 def main():
@@ -511,7 +586,7 @@ def main():
     parser.add_argument(
         "--mode",
         type=str,
-        default="cue_conflict",
+        default="shuffle",
         choices=["clean", "color", "cue_conflict", "translation", "shuffle", "all"],
         help="Experiment to run",
     )
@@ -529,6 +604,14 @@ def main():
         evaluate_cue_conflicts(device)
     elif args.mode == "translation":
         evaluate_translation(indices, device)
+    elif args.mode == "shuffle":
+        evaluate_patch_shuffle(indices, device)
+    elif args.mode == "all":
+        evaluate_clean_baseline(indices, device)
+        evaluate_color_bias(indices, device)
+        evaluate_cue_conflicts(device)
+        evaluate_translation(indices, device)
+        evaluate_patch_shuffle(indices, device)
 
 
 if __name__ == "__main__":

@@ -8,3 +8,5 @@ checkpoints/
 *.pth
 *.tar.gz
 ATML-PA1.pdf
+
+task1/results/cue_conflicts/

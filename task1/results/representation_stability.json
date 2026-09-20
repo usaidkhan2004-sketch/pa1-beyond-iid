@@ -1,0 +1,20 @@
+{
+  "resnet50": {
+    "grayscale": 0.7922,
+    "translation_delta16": 0.9043,
+    "patch_shuffle": 0.6004,
+    "cue_conflict": 0.5149
+  },
+  "vit_b16": {
+    "grayscale": 0.7231,
+    "translation_delta16": 0.9069,
+    "patch_shuffle": 0.5799,
+    "cue_conflict": 0.4846
+  },
+  "clip_vit_b32": {
+    "grayscale": 0.8953,
+    "translation_delta16": 0.9568,
+    "patch_shuffle": 0.7992,
+    "cue_conflict": 0.7771
+  }
+}

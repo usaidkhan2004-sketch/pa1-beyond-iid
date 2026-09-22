@@ -3,10 +3,11 @@
 __pycache__/
 *.pyc
 wandb/
-checkpoints/
 *.pt
 *.pth
 *.tar.gz
+*.zip
 ATML-PA1.pdf
+.DS_Store
 
 task1/results/cue_conflicts/

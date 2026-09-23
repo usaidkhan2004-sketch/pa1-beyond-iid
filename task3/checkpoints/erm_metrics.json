@@ -1,0 +1,24 @@
+{
+    "method": "ERM",
+    "source_domains": {
+        "photo": {
+            "acc": 97.30538922155688,
+            "macro_f1": 96.90748291695354
+        },
+        "art_painting": {
+            "acc": 90.73170731707317,
+            "macro_f1": 90.3653775078419
+        },
+        "cartoon": {
+            "acc": 92.32409381663112,
+            "macro_f1": 92.78668130932006
+        }
+    },
+    "mean_source_acc": 93.45373011842041,
+    "mean_source_f1": 93.3531805780385,
+    "worst_source_domain": "art_painting",
+    "worst_source_acc": 90.73170731707317,
+    "worst_source_f1": 90.3653775078419,
+    "source_domain_separability": 86.04651162790698,
+    "sharpness_proxy": 0.34589847922325134
+}

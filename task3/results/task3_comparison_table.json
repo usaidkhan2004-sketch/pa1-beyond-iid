@@ -1,0 +1,44 @@
+{
+    "ERM": {
+        "source_val_photo_acc": 97.30538922155688,
+        "source_val_art_acc": 90.73170731707317,
+        "source_val_cartoon_acc": 92.32409381663112,
+        "mean_source_acc": 93.45373011842041,
+        "mean_source_f1": 93.3531805780385,
+        "worst_source_acc": 90.73170731707317,
+        "worst_source_f1": 90.3653775078419,
+        "source_separability": 89.28571428571429,
+        "sharpness_proxy": 0.6142525672912598,
+        "sketch_acc": 66.22550267243574,
+        "sketch_f1": 65.04551106230052,
+        "delta_sketch_vs_erm": 0.0
+    },
+    "DAN-DG": {
+        "source_val_photo_acc": 25.748502994011975,
+        "source_val_art_acc": 21.951219512195124,
+        "source_val_cartoon_acc": 17.270788912579956,
+        "mean_source_acc": 21.656837139595684,
+        "mean_source_f1": 5.066996495567924,
+        "worst_source_acc": 17.270788912579956,
+        "worst_source_f1": 4.207792207792208,
+        "source_separability": 38.73626373626374,
+        "sharpness_proxy": 0.06882798671722412,
+        "sketch_acc": 4.0722830236701455,
+        "sketch_f1": 1.1179820424134437,
+        "delta_sketch_vs_erm": -62.15321964876559
+    },
+    "SAM": {
+        "source_val_photo_acc": 98.20359281437125,
+        "source_val_art_acc": 90.97560975609757,
+        "source_val_cartoon_acc": 95.3091684434968,
+        "mean_source_acc": 94.8294570046552,
+        "mean_source_f1": 94.90265222756392,
+        "worst_source_acc": 90.97560975609757,
+        "worst_source_f1": 91.05909037829261,
+        "source_separability": 88.46153846153845,
+        "sharpness_proxy": 0.20051224529743195,
+        "sketch_acc": 72.63934843471621,
+        "sketch_f1": 72.94638430947361,
+        "delta_sketch_vs_erm": 6.413845762280474
+    }
+}

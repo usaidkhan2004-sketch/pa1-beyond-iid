@@ -1,0 +1,32 @@
+{
+    "lambda_0.1": {
+        "lambda_dg": 0.1,
+        "mean_source_acc": 94.82314065508797,
+        "mean_source_f1": 94.8929674142391,
+        "worst_source_acc": 92.19512195121952,
+        "worst_source_f1": 92.46923851982783,
+        "source_separability": 68.13186813186813,
+        "sketch_acc": 65.283787223212,
+        "sketch_f1": 64.76139813050013
+    },
+    "lambda_1.0": {
+        "lambda_dg": 1.0,
+        "mean_source_acc": 21.656837139595684,
+        "mean_source_f1": 5.066996495567924,
+        "worst_source_acc": 17.270788912579956,
+        "worst_source_f1": 4.207792207792208,
+        "source_separability": 38.73626373626374,
+        "sketch_acc": 4.0722830236701455,
+        "sketch_f1": 1.1179820424134437
+    },
+    "lambda_10.0": {
+        "lambda_dg": 10.0,
+        "mean_source_acc": 21.656837139595684,
+        "mean_source_f1": 5.066996495567924,
+        "worst_source_acc": 17.270788912579956,
+        "worst_source_f1": 4.207792207792208,
+        "source_separability": 38.73626373626374,
+        "sketch_acc": 4.0722830236701455,
+        "sketch_f1": 1.1179820424134437
+    }
+}

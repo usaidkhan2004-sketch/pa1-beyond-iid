@@ -11,3 +11,7 @@ ATML-PA1.pdf
 .DS_Store
 
 task1/results/cue_conflicts/
+*.pth
+__pycache__/
+*.pyc
+.DS_Store

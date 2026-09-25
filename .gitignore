@@ -15,3 +15,26 @@ task1/results/cue_conflicts/
 __pycache__/
 *.pyc
 .DS_Store
+# System & Bytecode
+.DS_Store
+__pycache__/
+*.pyc
+
+# Datasets
+data/
+*/data/
+*.tar.gz
+
+# Checkpoints & Cached Tensors
+*.pth
+checkpoints/
+*/checkpoints/
+*.pt
+
+# LaTeX Build Intermediates
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk

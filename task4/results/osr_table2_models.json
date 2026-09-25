@@ -1,0 +1,46 @@
+{
+    "Vanilla_MLS": {
+        "csa": 94.84999775886536,
+        "threshold_tau": -5.841370439529419,
+        "cifar10_test_accept_rate": 94.99,
+        "near_auroc": 79.93380625,
+        "near_fpr95": 68.25,
+        "far_auroc": 89.22264374999999,
+        "far_fpr95": 50.625,
+        "all_auroc": 84.578225,
+        "all_fpr95": 59.4375
+    },
+    "GCSC_MLS": {
+        "csa": 95.169997215271,
+        "threshold_tau": -6.091324019432064,
+        "cifar10_test_accept_rate": 95.06,
+        "near_auroc": 80.04679375,
+        "near_fpr95": 67.125,
+        "far_auroc": 90.05331875000002,
+        "far_fpr95": 42.75,
+        "all_auroc": 85.05005625000001,
+        "all_fpr95": 54.93749999999999
+    },
+    "PROSER_MLS": {
+        "csa": 94.80999708175659,
+        "threshold_tau": -5.413693499565124,
+        "cifar10_test_accept_rate": 95.15,
+        "near_auroc": 78.62389375000001,
+        "near_fpr95": 68.5,
+        "far_auroc": 86.13409374999999,
+        "far_fpr95": 55.00000000000001,
+        "all_auroc": 82.37899375,
+        "all_fpr95": 61.75000000000001
+    },
+    "PROSER_Placeholder": {
+        "csa": 94.80999708175659,
+        "threshold_tau": 0.9999485075473785,
+        "cifar10_test_accept_rate": 94.74000000000001,
+        "near_auroc": 41.914668750000004,
+        "near_fpr95": 90.375,
+        "far_auroc": 52.880018750000005,
+        "far_fpr95": 76.875,
+        "all_auroc": 47.39734375,
+        "all_fpr95": 83.625
+    }
+}

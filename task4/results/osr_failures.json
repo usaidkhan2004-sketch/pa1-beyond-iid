@@ -1,0 +1,87 @@
+{
+    "vanilla_mls_threshold": -5.841370439529419,
+    "near_unknown_failures": [
+        {
+            "group": "Near Unknown",
+            "unknown_class": "bus",
+            "predicted_known_class": "truck",
+            "score_mls": -12.244108200073242,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 12.244108200073242
+        },
+        {
+            "group": "Near Unknown",
+            "unknown_class": "bus",
+            "predicted_known_class": "truck",
+            "score_mls": -11.005508422851562,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 11.005508422851562
+        },
+        {
+            "group": "Near Unknown",
+            "unknown_class": "bus",
+            "predicted_known_class": "truck",
+            "score_mls": -10.990640640258789,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 10.990640640258789
+        },
+        {
+            "group": "Near Unknown",
+            "unknown_class": "bus",
+            "predicted_known_class": "truck",
+            "score_mls": -10.910919189453125,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 10.910919189453125
+        },
+        {
+            "group": "Near Unknown",
+            "unknown_class": "wolf",
+            "predicted_known_class": "dog",
+            "score_mls": -10.881843566894531,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 10.881843566894531
+        }
+    ],
+    "far_unknown_failures": [
+        {
+            "group": "Far Unknown",
+            "unknown_class": "keyboard",
+            "predicted_known_class": "bird",
+            "score_mls": -12.382529258728027,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 12.382529258728027
+        },
+        {
+            "group": "Far Unknown",
+            "unknown_class": "bowl",
+            "predicted_known_class": "ship",
+            "score_mls": -11.374780654907227,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 11.374780654907227
+        },
+        {
+            "group": "Far Unknown",
+            "unknown_class": "bowl",
+            "predicted_known_class": "cat",
+            "score_mls": -11.082977294921875,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 11.082977294921875
+        },
+        {
+            "group": "Far Unknown",
+            "unknown_class": "mushroom",
+            "predicted_known_class": "frog",
+            "score_mls": -11.049946784973145,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 11.049946784973145
+        },
+        {
+            "group": "Far Unknown",
+            "unknown_class": "keyboard",
+            "predicted_known_class": "truck",
+            "score_mls": -10.703336715698242,
+            "threshold_tau": -5.841370439529419,
+            "max_logit": 10.703336715698242
+        }
+    ]
+}

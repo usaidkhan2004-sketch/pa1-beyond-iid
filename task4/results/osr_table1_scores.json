@@ -1,0 +1,42 @@
+{
+    "MSP": {
+        "threshold_tau": 0.16911067962646484,
+        "cifar10_test_accept_rate": 95.19,
+        "near_auroc": 81.51995625,
+        "near_fpr95": 75.375,
+        "far_auroc": 89.437325,
+        "far_fpr95": 60.25,
+        "all_auroc": 85.478640625,
+        "all_fpr95": 67.8125
+    },
+    "MLS": {
+        "threshold_tau": -5.841370439529419,
+        "cifar10_test_accept_rate": 94.99,
+        "near_auroc": 79.93380625,
+        "near_fpr95": 68.25,
+        "far_auroc": 89.22264374999999,
+        "far_fpr95": 50.625,
+        "all_auroc": 84.578225,
+        "all_fpr95": 59.4375
+    },
+    "Energy": {
+        "threshold_tau": -6.059058356285094,
+        "cifar10_test_accept_rate": 94.95,
+        "near_auroc": 79.97800000000001,
+        "near_fpr95": 67.375,
+        "far_auroc": 89.2856875,
+        "far_fpr95": 49.25,
+        "all_auroc": 84.63184374999999,
+        "all_fpr95": 58.3125
+    },
+    "Mahalanobis": {
+        "threshold_tau": 3405.6076049804697,
+        "cifar10_test_accept_rate": 95.28999999999999,
+        "near_auroc": 80.67055625000002,
+        "near_fpr95": 74.125,
+        "far_auroc": 91.76305,
+        "far_fpr95": 54.50000000000001,
+        "all_auroc": 86.216803125,
+        "all_fpr95": 64.3125
+    }
+}
